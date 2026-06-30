@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RELEASE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:ital,wght@0,200;0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #050708;
+      --panel:     rgba(7, 13, 10, 0.80);
+      --sep:       rgba(255,255,255,0.07);
+      --fire:      #C84A0E;
+      --fire-b:    #E8680A;
+      --fire-dim:  #7A2E08;
+      --ash:       #EDE8DE;
+      --ash-2:     rgba(237,232,222,0.55);
+      --ash-3:     rgba(237,232,222,0.18);
+      --ash-4:     rgba(237,232,222,0.07);
+      --border:    #1A221E;
+      --surface:   #0C1210;
+      --surface2:  #111916;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--ash);
+      font-family: 'Inter', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ═══ CANVAS BRASAS ═══ */
+    #ember-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ═══ NOISE ═══ */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 180px 180px;
+    }
+
+    /* ═══ NAV ═══ */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      padding: 22px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, rgba(5,7,8,0.95) 0%, transparent 100%);
+    }
+
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: 0.3em;
+      color: var(--ash);
+      text-decoration: none;
+    }
+
+    .nav-right { display: flex; gap: 28px; align-items: center; }
+
+    .nav-link {
+      color: var(--ash-3);
+      text-decoration: none;
+      font-size: 9px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      transition: color 0.3s;
+      background: none; border: none;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+    }
+    .nav-link:hover { color: var(--ash-2); }
+
+    /* ═══ CALENDARIO SECTION ═══ */
+    #calendario {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 20px 60px;
+      gap: 28px;
+    }
+
+    .cal-brand {
+      text-align: center;
+    }
+
+    .cal-logo-text {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(56px, 11vw, 120px);
+      letter-spacing: 0.1em;
+      color: var(--ash);
+      line-height: 1;
+      display: block;
+      text-shadow: 0 0 100px rgba(180,60,8,0.2);
+    }
+
+    .cal-sub {
+      font-size: 12px;
+      letter-spacing: 0.38em;
+      text-transform: uppercase;
+      color: var(--fire-dim);
+      margin-top: 10px;
+      display: block;
+    }
+
+    /* ═══ PANEL ═══ */
+    .cal-panel {
+      background: var(--panel);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid rgba(255,255,255,0.055);
+      border-radius: 18px;
+      width: min(780px, 94vw);
+      padding: 32px 28px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* subtle inner glow at bottom */
+    .cal-panel::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 120px;
+      background: radial-gradient(ellipse at 50% 100%, rgba(180,58,8,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cal-month-label {
+      font-size: 13px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: rgba(237,232,222,0.55);
+      margin-bottom: 22px;
+      display: block;
+      text-align: center;
+    }
+
+    /* ═══ DAY HEADERS ═══ */
+    .cal-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      margin-bottom: 12px;
+    }
+
+    .cal-header-cell {
+      text-align: center;
+      font-size: 9.5px;
+      letter-spacing: 0.06em;
+      color: rgba(237,232,222,0.38);
+      font-weight: 300;
+      padding: 0 0 6px;
+      text-transform: uppercase;
+    }
+
+    .cal-header-cell.session-col {
+      color: rgba(200,74,14,0.5);
+    }
+
+    /* ═══ SEPARATOR ═══ */
+    .cal-sep {
+      height: 1px;
+      background: var(--sep);
+      margin: 0 -20px;
+    }
+
+    /* ═══ WEEK ROW ═══ */
+    .cal-week {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    /* ═══ DAY CELL ═══ */
+    .cal-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 4px 14px;
+      position: relative;
+      min-height: 80px;
+      cursor: default;
+      user-select: none;
+    }
+
+    .cell-num {
+      font-size: clamp(22px, 4vw, 32px);
+      font-weight: 200;
+      line-height: 1;
+      color: var(--ash-3);
+      transition: color 0.3s;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Weekend — dimmer */
+    .cal-cell.weekend .cell-num { color: var(--ash-4); }
+
+    /* Past — very dim */
+    .cal-cell.past .cell-num { color: rgba(237,232,222,0.06); }
+    .cal-cell.past.weekend .cell-num { color: rgba(237,232,222,0.04); }
+
+    /* Today indicator */
+    .today-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -54%);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--ash-2);
+      pointer-events: none;
+    }
+
+    /* Session day */
+    .cal-cell.session {
+      cursor: pointer;
+    }
+
+    .cal-cell.session .cell-num {
+      color: var(--ash);
+      font-weight: 300;
+    }
+
+    .cal-cell.session:hover .cell-num { color: var(--fire-b); }
+
+    .cal-cell.session::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 0;
+      background: radial-gradient(ellipse at 50% 50%, rgba(200,74,14,0.09) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .cal-cell.session:hover::after { opacity: 1; }
+
+    /* Fire dot below session number */
+    .cell-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--fire);
+      margin-top: 7px;
+      box-shadow: 0 0 6px rgba(200,74,14,0.8);
+    }
+
+    /* Spots */
+    .cell-spots {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: rgba(200,74,14,0.6);
+      margin-top: 4px;
+    }
+
+    /* Holiday */
+    .cal-cell.holiday .cell-num { color: var(--ash-4); }
+    .cell-festivo {
+      font-size: 7px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(237,232,222,0.2);
+      margin-top: 6px;
+    }
+
+    /* Agotada */
+    .cal-cell.agotada .cell-num { color: rgba(237,232,222,0.25); }
+    .cal-cell.agotada { cursor: not-allowed; }
+    .cell-agotada {
+      font-size: 7px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(237,232,222,0.2);
+      margin-top: 6px;
+    }
+
+    /* ═══ DIVIDER ═══ */
+    .fire-divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(200,74,14,0.3), transparent);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ═══ TIQUETERAS ═══ */
+    #tiqueteras {
+      padding: 80px 40px 100px;
+      max-width: 860px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-label {
+      font-size: 9px;
+      letter-spacing: 0.6em;
+      text-transform: uppercase;
+      color: var(--fire);
+      margin-bottom: 10px;
+    }
+
+    .section-heading {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(44px, 6vw, 72px);
+      letter-spacing: 0.05em;
+      color: var(--ash);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .tiq-note {
+      font-size: 11px;
+      color: var(--ash-2);
+      font-style: italic;
+      line-height: 1.6;
+      margin-bottom: 52px;
+    }
+
+    .tiq-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+
+    .tiq-col-title {
+      font-size: 9px;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: var(--fire);
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tiq-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      gap: 16px;
+      transition: all 0.3s;
+    }
+    .tiq-item:last-child { border-bottom: none; }
+    .tiq-item:hover .tiq-name { color: var(--ash); }
+    .tiq-item:hover .tiq-price { color: var(--fire-b); }
+
+    .tiq-name {
+      font-size: 12px;
+      color: var(--ash-2);
+      transition: color 0.3s;
+    }
+
+    .tiq-price {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      color: var(--ash);
+      white-space: nowrap;
+      transition: color 0.3s;
+    }
+
+    .tiq-footer-note {
+      margin-top: 32px;
+      font-size: 11px;
+      color: var(--ash-2);
+      padding: 16px 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      line-height: 1.7;
+    }
+
+    /* ═══ MODALES ═══ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5,7,8,0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: rgba(10,16,12,0.92);
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 16px;
+      max-width: 460px;
+      width: 100%;
+      position: relative;
+      transform: translateY(20px);
+      transition: transform 0.35s ease;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-overlay.active .modal { transform: translateY(0); }
+
+    .modal-header {
+      padding: 30px 32px 22px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: none; border: none;
+      color: var(--ash-3); font-size: 20px;
+      cursor: pointer; padding: 6px 10px;
+      line-height: 1; transition: color 0.3s;
+      font-family: sans-serif;
+    }
+    .modal-close:hover { color: var(--ash); }
+
+    .modal-day-lbl {
+      font-size: 9px;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: var(--fire);
+      margin-bottom: 6px;
+    }
+
+    .modal-date {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 46px;
+      letter-spacing: 0.04em;
+      color: var(--ash);
+      line-height: 1;
+    }
+
+    .modal-time {
+      font-size: 12px;
+      color: var(--ash-2);
+      margin-top: 6px;
+    }
+
+    .modal-body { padding: 22px 32px 30px; }
+
+    .modal-sec-title {
+      font-size: 9px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--ash-3);
+      margin-bottom: 12px;
+    }
+
+    .modal-options { display: grid; gap: 5px; margin-bottom: 22px; }
+
+    .modal-option {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 15px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.02);
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.25s;
+    }
+    .modal-option:hover,
+    .modal-option.selected {
+      border-color: rgba(200,74,14,0.5);
+      background: rgba(200,74,14,0.07);
+    }
+
+    .modal-opt-label { font-size: 12px; color: var(--ash); }
+    .modal-opt-sub { font-size: 10px; color: var(--ash-3); margin-top: 2px; }
+    .modal-opt-price {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      color: var(--ash);
+    }
+
+    .modal-form { display: grid; gap: 8px; margin-top: 20px; }
+
+    .modal-input {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px;
+      color: var(--ash);
+      padding: 12px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 300;
+      outline: none;
+      transition: border-color 0.3s;
+      width: 100%;
+    }
+    .modal-input:focus { border-color: rgba(200,74,14,0.5); }
+    .modal-input::placeholder { color: rgba(237,232,222,0.22); }
+
+    .modal-btn {
+      margin-top: 6px;
+      width: 100%;
+      padding: 14px;
+      background: var(--fire);
+      border: none;
+      border-radius: 8px;
+      color: var(--ash);
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .modal-btn:hover { background: var(--fire-b); }
+
+    .modal-note {
+      margin-top: 14px;
+      font-size: 10px;
+      color: var(--ash-3);
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .modal-alt {
+      display: block;
+      text-align: center;
+      margin-top: 14px;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: var(--ash-3);
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      cursor: pointer;
+      transition: color 0.3s;
+      background: none; border: none;
+      width: 100%; font-family: 'Inter', sans-serif;
+    }
+    .modal-alt:hover { color: var(--fire); }
+
+    /* Tiq tabs */
+    .tiq-modal-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+    .tiq-tab {
+      padding: 11px;
+      text-align: center;
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--ash-3);
+      cursor: pointer;
+      background: rgba(255,255,255,0.02);
+      border: none;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s;
+    }
+    .tiq-tab.active { background: rgba(200,74,14,0.1); color: var(--ash); border-bottom: 2px solid var(--fire); }
+    .tiq-tab:hover { color: var(--ash); }
+
+    .tiq-modal-grid { display: grid; gap: 4px; }
+
+    .tiq-modal-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.02);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.25s;
+      gap: 12px;
+    }
+    .tiq-modal-item:hover { border-color: rgba(200,74,14,0.45); background: rgba(200,74,14,0.07); }
+
+    .tiq-modal-name { font-size: 12px; color: var(--ash-2); }
+    .tiq-modal-item:hover .tiq-modal-name { color: var(--ash); }
+    .tiq-modal-price {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      color: var(--ash);
+      white-space: nowrap;
+    }
+
+    /* ═══ FOOTER ═══ */
+    footer {
+      padding: 40px 40px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 0.28em;
+      color: var(--ash-2);
+    }
+
+    .footer-links { display: flex; gap: 24px; }
+
+    .footer-link {
+      color: var(--ash-3);
+      text-decoration: none;
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      transition: color 0.3s;
+    }
+    .footer-link:hover { color: var(--fire); }
+
+    /* ═══ ADMIN ═══ */
+    #adminPanel {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(5,7,8,0.97);
+      z-index: 9000;
+      overflow-y: auto;
+    }
+    #adminPanel.active { display: block; }
+
+    .admin-inner { max-width: 620px; margin: 0 auto; padding: 56px 40px; }
+    .admin-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 52px;
+      letter-spacing: 0.06em;
+      color: var(--ash);
+      margin-bottom: 4px;
+    }
+    .admin-sub { font-size: 11px; color: var(--ash-2); margin-bottom: 44px; }
+    .admin-section { margin-bottom: 36px; }
+    .admin-section-title {
+      font-size: 9px;
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      color: var(--fire);
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-row-name { font-size: 13px; color: var(--ash); }
+    .admin-controls { display: flex; gap: 8px; }
+    .admin-btn {
+      padding: 6px 14px;
+      font-size: 8px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-family: 'Inter', sans-serif;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ash-2);
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.3s;
+    }
+    .admin-btn.danger { border-color: #5A1A0A; color: #D44; }
+    .admin-btn.danger:hover { background: #5A1A0A; color: var(--ash); }
+    .admin-btn.ok { border-color: #0A3020; color: #4A9; }
+    .admin-btn.ok:hover { background: #0A3020; color: var(--ash); }
+    .admin-btn:hover { border-color: var(--fire-dim); color: var(--ash); }
+    .admin-input-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-top: 14px; }
+    .admin-input {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--ash);
+      padding: 10px 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 300;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .admin-input:focus { border-color: var(--fire-dim); }
+    .admin-add-btn {
+      padding: 10px 18px;
+      background: var(--fire);
+      border: none;
+      border-radius: 8px;
+      color: var(--ash);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      white-space: nowrap;
+      transition: background 0.3s;
+    }
+    .admin-add-btn:hover { background: var(--fire-b); }
+    .admin-close-btn {
+      margin-top: 36px;
+      padding: 13px 28px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--ash-2);
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s;
+    }
+    .admin-close-btn:hover { border-color: var(--ash-2); color: var(--ash); }
+    .admin-login { max-width: 320px; margin: 0 auto; padding: 60px 40px; text-align: center; }
+    .admin-login-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 48px;
+      letter-spacing: 0.08em;
+      color: var(--ash);
+      margin-bottom: 28px;
+    }
+    .tag-badge {
+      display: inline-block;
+      font-size: 8px;
+      letter-spacing: 0.2em;
+      color: var(--ash-3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 7px;
+      text-transform: uppercase;
+      margin-left: 8px;
+    }
+    .tag-badge.red { color: #D44; border-color: #5A1A0A; }
+
+    /* ═══ RESPONSIVE ═══ */
+    @media (max-width: 600px) {
+      nav { padding: 18px 20px; }
+      #calendario { padding: 70px 12px 40px; gap: 20px; }
+      .cal-panel { padding: 20px 10px 16px; }
+      .cal-cell { padding: 12px 2px 10px; min-height: 64px; }
+      .cell-num { font-size: 20px; }
+      .cal-header-cell { font-size: 7.5px; letter-spacing: 0.02em; }
+      .today-ring { width: 34px; height: 34px; }
+      .cell-spots { font-size: 8px; }
+      #tiqueteras { padding: 60px 20px 80px; }
+      .tiq-grid { grid-template-columns: 1fr; gap: 28px; }
+      footer { flex-direction: column; gap: 20px; text-align: center; padding: 36px 20px; }
+      .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+      .modal-header { padding: 22px 22px 18px; }
+      .modal-body { padding: 18px 22px 24px; }
+      .admin-input-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--             C O N F I G U R A C I Ó N          -->
+<!-- ═══════════════════════════════════════════════ -->
+<script>
+const CONFIG = {
+  horaDisplay:    '6:45 PM – 8:00 PM',
+  hora24:         '18:45',
+  cuposPorSesion: 10,
+
+  // 1=Lunes, 3=Miércoles (JS getDay: 0=Dom,1=Lun,2=Mar,3=Mié,4=Jue,5=Vie,6=Sáb)
+  diasSesion: [1, 3],
+
+  whatsapp:      '573000000000',  // ← TU NÚMERO con código 57
+  instagram:     'https://www.instagram.com/release',  // ← TU IG
+  adminPassword: 'release2024',  // ← TU CONTRASEÑA
+
+  // Links de pago Bold — pega aquí la URL de cada link que crees en Bold
+  bold: {
+    sola:        'BOLD_LINK_SESION_SOLA',       // Sesión individual $45,000
+    companero:   'BOLD_LINK_SESION_DUO',        // Sesión duo $80,000
+    ind_prueba:  'BOLD_LINK_IND_PRUEBA',        // Tiquetera prueba individual $65,000
+    ind_1:       'BOLD_LINK_IND_1',             // 1 sesión $45,000
+    ind_5:       'BOLD_LINK_IND_5',             // 5 sesiones $195,000
+    ind_10:      'BOLD_LINK_IND_10',            // 10 sesiones $395,000
+    ind_15:      'BOLD_LINK_IND_15',            // 15 sesiones $555,000
+    comp_prueba: 'BOLD_LINK_COMP_PRUEBA',       // Tiquetera prueba compartida $120,000
+    comp_2:      'BOLD_LINK_COMP_2',            // 2 sesiones compartidas $80,000
+    comp_6:      'BOLD_LINK_COMP_6',            // 6 sesiones compartidas $235,000
+    comp_8:      'BOLD_LINK_COMP_8',            // 8 sesiones compartidas $310,000
+    comp_12:     'BOLD_LINK_COMP_12',           // 12 sesiones compartidas $444,000
+  }
+};
+</script>
+<!-- ════════════════════════════════════════════════ -->
+
+<canvas id="ember-canvas"></canvas>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">RELEASE</a>
+  <div class="nav-right">
+    <a href="#tiqueteras" class="nav-link">Tiqueteras</a>
+    <button class="nav-link" onclick="openTiqModal()">Comprar</button>
+  </div>
+</nav>
+
+<!-- CALENDARIO -->
+<section id="calendario">
+  <div class="cal-brand">
+    <span class="cal-logo-text">RELEASE</span>
+    <span class="cal-sub" id="calSubLabel">Bogotá · Barrio La Cabrera</span>
+  </div>
+
+  <div class="cal-panel">
+    <span class="cal-month-label" id="calMonthLabel"></span>
+
+    <!-- Cabecera días -->
+    <div class="cal-header" id="calHeader"></div>
+
+    <div class="cal-sep"></div>
+
+    <!-- Semana 1 -->
+    <div class="cal-week" id="week1"></div>
+
+    <div class="cal-sep"></div>
+
+    <!-- Semana 2 -->
+    <div class="cal-week" id="week2"></div>
+
+    <div class="cal-sep"></div>
+  </div>
+</section>
+
+<div class="fire-divider"></div>
+
+<!-- TIQUETERAS -->
+<section id="tiqueteras">
+  <p class="section-label">Acceso</p>
+  <h2 class="section-heading">TIQUETERAS</h2>
+  <p class="tiq-note">Válidas 2 meses desde tu primera sesión después de la compra.</p>
+
+  <div class="tiq-grid">
+    <div>
+      <p class="tiq-col-title">Individual</p>
+      <div class="tiq-item" onclick="payTiquetera('ind_prueba')"><span class="tiq-name">Semana de prueba</span><span class="tiq-price">$65k</span></div>
+      <div class="tiq-item" onclick="payTiquetera('ind_1')"><span class="tiq-name">1 sesión</span><span class="tiq-price">$45k</span></div>
+      <div class="tiq-item" onclick="payTiquetera('ind_5')"><span class="tiq-name">5 sesiones</span><span class="tiq-price">$195k</span></div>
+      <div class="tiq-item" onclick="payTiquetera('ind_10')"><span class="tiq-name">10 sesiones</span><span class="tiq-price">$395k</span></div>
+      <div class="tiq-item" onclick="payTiquetera('ind_15')"><span class="tiq-name">15 sesiones</span><span class="tiq-price">$555k</span></div>
+    </div>
+    <div>
+      <p class="tiq-col-title">Compartida · 2 personas</p>
+      <div class="tiq-item" onclick="payTiquetera('comp_prueba')"><span class="tiq-name">Semana de prueba</span><span class="tiq-price">$120k</span></div>
+      <div class="tiq-item" onclick="payTiquetera('comp_2')"><span class="tiq-name">2 sesiones</span><span class="tiq-price">$80k</span></div>
+      <div class="tiq-item" onclick="payTiquetera('comp_6')"><span class="tiq-name">6 sesiones</span><span class="tiq-price">$235k</span></div>
+      <div class="tiq-item" onclick="payTiquetera('comp_8')"><span class="tiq-name">8 sesiones</span><span class="tiq-price">$310k</span></div>
+      <div class="tiq-item" onclick="payTiquetera('comp_12')"><span class="tiq-name">12 sesiones</span><span class="tiq-price">$444k</span></div>
+    </div>
+  </div>
+
+  <div class="tiq-footer-note">
+    Sesión suelta acompañado/a: <strong style="color:var(--ash)">$40,000 c/u</strong> — selecciónala al reservar en el calendario de arriba.<br>
+    Tiqueteras compartidas: descuentan 1 sesión por persona, no tienen que ir al tiempo.
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">RELEASE</div>
+  <div class="footer-links">
+    <a id="linkIG" href="#" target="_blank" class="footer-link">Instagram</a>
+    <a id="linkWA" href="#" target="_blank" class="footer-link">WhatsApp</a>
+  </div>
+  <div style="font-size:9px; color:var(--ash-3); letter-spacing:0.2em; text-transform:uppercase;">Bogotá · Colombia</div>
+</footer>
+
+
+<!-- MODAL RESERVA -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal">
+    <div class="modal-header">
+      <button class="modal-close" onclick="closeModal('bookingModal')">×</button>
+      <p class="modal-day-lbl" id="mDayLbl"></p>
+      <div class="modal-date" id="mDateLbl"></div>
+      <p class="modal-time" id="mTimeLbl"></p>
+    </div>
+    <div class="modal-body">
+      <p class="modal-sec-title">Tipo de reserva</p>
+      <div class="modal-options">
+        <div class="modal-option selected" id="optSola" onclick="selectOpt('sola')">
+          <div><div class="modal-opt-label">Sesión individual</div></div>
+          <div class="modal-opt-price">$45,000</div>
+        </div>
+        <div class="modal-option" id="optDuo" onclick="selectOpt('companero')">
+          <div>
+            <div class="modal-opt-label">Venimos dos</div>
+            <div class="modal-opt-sub">$40,000 c/u · total $80,000</div>
+          </div>
+          <div class="modal-opt-price">$80,000</div>
+        </div>
+      </div>
+      <div class="modal-form">
+        <input class="modal-input" id="fNombre1" type="text" placeholder="Tu nombre" />
+        <input class="modal-input" id="fWA1" type="tel" placeholder="Tu WhatsApp (ej: 3001234567)" />
+        <input class="modal-input" id="fNombre2" type="text" placeholder="Nombre de tu acompañante" style="display:none" />
+        <input class="modal-input" id="fWA2" type="tel" placeholder="WhatsApp del acompañante" style="display:none" />
+      </div>
+      <button class="modal-btn" onclick="proceedPay()">Pagar y reservar cupo</button>
+      <p class="modal-note">Al pagar confirmas tu cupo. Te escribimos por WhatsApp.</p>
+      <button class="modal-alt" onclick="closeModal('bookingModal'); openTiqModal()">¿Prefieres una tiquetera?</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL TIQUETERAS -->
+<div class="modal-overlay" id="tiqModal">
+  <div class="modal">
+    <div class="modal-header">
+      <button class="modal-close" onclick="closeModal('tiqModal')">×</button>
+      <p class="modal-day-lbl">Acceso</p>
+      <div class="modal-date" style="font-size:42px;">TIQUETERAS</div>
+    </div>
+    <div class="modal-body">
+      <div class="tiq-modal-tabs">
+        <button class="tiq-tab active" onclick="switchTab('ind',this)">Individual</button>
+        <button class="tiq-tab" onclick="switchTab('comp',this)">Compartida</button>
+      </div>
+      <div id="tabInd">
+        <div class="tiq-modal-grid">
+          <div class="tiq-modal-item" onclick="payTiquetera('ind_prueba')"><span class="tiq-modal-name">Semana de prueba</span><span class="tiq-modal-price">$65,000</span></div>
+          <div class="tiq-modal-item" onclick="payTiquetera('ind_1')"><span class="tiq-modal-name">1 sesión</span><span class="tiq-modal-price">$45,000</span></div>
+          <div class="tiq-modal-item" onclick="payTiquetera('ind_5')"><span class="tiq-modal-name">5 sesiones</span><span class="tiq-modal-price">$195,000</span></div>
+          <div class="tiq-modal-item" onclick="payTiquetera('ind_10')"><span class="tiq-modal-name">10 sesiones</span><span class="tiq-modal-price">$395,000</span></div>
+          <div class="tiq-modal-item" onclick="payTiquetera('ind_15')"><span class="tiq-modal-name">15 sesiones</span><span class="tiq-modal-price">$555,000</span></div>
+        </div>
+      </div>
+      <div id="tabComp" style="display:none">
+        <p style="font-size:10px;color:var(--ash-2);font-style:italic;margin-bottom:12px;line-height:1.6;">Se descuenta 1 sesión por persona. No tienen que ir al tiempo.</p>
+        <div class="tiq-modal-grid">
+          <div class="tiq-modal-item" onclick="payTiquetera('comp_prueba')"><span class="tiq-modal-name">Semana de prueba</span><span class="tiq-modal-price">$120,000</span></div>
+          <div class="tiq-modal-item" onclick="payTiquetera('comp_2')"><span class="tiq-modal-name">2 sesiones</span><span class="tiq-modal-price">$80,000</span></div>
+          <div class="tiq-modal-item" onclick="payTiquetera('comp_6')"><span class="tiq-modal-name">6 sesiones</span><span class="tiq-modal-price">$235,000</span></div>
+          <div class="tiq-modal-item" onclick="payTiquetera('comp_8')"><span class="tiq-modal-name">8 sesiones</span><span class="tiq-modal-price">$310,000</span></div>
+          <div class="tiq-modal-item" onclick="payTiquetera('comp_12')"><span class="tiq-modal-name">12 sesiones</span><span class="tiq-modal-price">$444,000</span></div>
+        </div>
+      </div>
+      <p class="modal-note" style="margin-top:16px;">Válidas 2 meses desde tu primera sesión.<br>Confirmación por WhatsApp después del pago.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ADMIN -->
+<div id="adminPanel">
+  <div id="adminLogin" class="admin-login">
+    <div class="admin-login-title">ADMIN</div>
+    <input class="admin-input" type="password" id="adminPw" placeholder="Contraseña"
+           style="width:100%;margin-bottom:10px;"
+           onkeydown="if(event.key==='Enter')checkPw()" />
+    <button class="admin-add-btn" style="width:100%;" onclick="checkPw()">Entrar</button>
+    <button class="admin-close-btn" style="width:100%;margin-top:10px;" onclick="closeAdmin()">Cancelar</button>
+  </div>
+  <div id="adminContent" class="admin-inner" style="display:none">
+    <div class="admin-title">ADMIN</div>
+    <p class="admin-sub">Panel de administración · Release</p>
+    <div class="admin-section">
+      <div class="admin-section-title">Sesiones próximas</div>
+      <div id="adminList"></div>
+    </div>
+    <div class="admin-section">
+      <div class="admin-section-title">Agregar sesión especial</div>
+      <div class="admin-input-row">
+        <input class="admin-input" type="date" id="aNuevaFecha" />
+        <input class="admin-input" type="time" id="aNuevaHora" value="19:00" />
+        <button class="admin-add-btn" onclick="addEspecial()">+ Agregar</button>
+      </div>
+    </div>
+    <button class="admin-close-btn" onclick="closeAdmin()">← Cerrar panel</button>
+  </div>
+</div>
+
+
+<script>
+// ══════════════════════════════════════════
+// SELVA EN LLAMAS — verde selva con pulsos de ámbar vivo
+// ══════════════════════════════════════════
+(function() {
+  const canvas = document.getElementById('ember-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, orbs=[], ps=[], gt=0;
+  function rnd(a,b){return a+Math.random()*(b-a);}
+
+  function mkOrb(){
+    // Solo fuego: rojo-naranja-ámbar-dorado
+    const hue = rnd(8, 48);
+    return {
+      x:rnd(0,W), y:rnd(0,H),
+      r:rnd(80,240),
+      hue,
+      phase:rnd(0,6.28), spd:rnd(0.004,0.011),
+      bright:rnd(0.08,0.2),
+      vx:rnd(-0.05,0.05), vy:rnd(-0.04,0.04)
+    };
+  }
+
+  function mkP(){
+    // Solo fuego: rojo-naranja-ámbar-dorado
+    const hue = rnd(6, 50);
+    return {
+      x:rnd(0,W), y:rnd(0,H),
+      vx:rnd(-0.09,0.09), vy:rnd(-0.07,0.07),
+      phase:rnd(0,6.28), spd:rnd(0.006,0.02),
+      r:rnd(0.15,0.7),
+      hue,
+      bright:rnd(0.2,0.58)
+    };
+  }
+
+  function build(){
+    orbs = Array.from({length:7}, mkOrb);
+    ps   = Array.from({length:90}, mkP);
+  }
+
+  function resize(){
+    W=canvas.width=innerWidth; H=canvas.height=innerHeight;
+    build();
+  }
+  resize(); addEventListener('resize', resize);
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    gt+=0.006;
+
+    // Pulso fuego central (respira)
+    const bg=ctx.createRadialGradient(W*.5,H*.6,0,W*.5,H*.6,W*.7);
+    bg.addColorStop(0,`rgba(160,42,4,${0.09+Math.sin(gt)*0.03})`);
+    bg.addColorStop(0.5,`rgba(90,20,2,${0.04})`);
+    bg.addColorStop(1,'transparent');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+    // Pulso naranja-ámbar desde abajo (fuego de la tierra)
+    const ab=ctx.createLinearGradient(0,H,0,H*0.25);
+    ab.addColorStop(0,`rgba(195,72,8,${0.14+Math.sin(gt*0.85+1)*0.05})`);
+    ab.addColorStop(0.5,`rgba(160,48,4,${0.06+Math.sin(gt*0.7)*0.025})`);
+    ab.addColorStop(1,'transparent');
+    ctx.fillStyle=ab; ctx.fillRect(0,0,W,H);
+
+    // Segundo glow naranja lateral
+    const al=ctx.createRadialGradient(W*0.2,H*0.8,0,W*0.2,H*0.8,W*0.5);
+    al.addColorStop(0,`rgba(200,80,10,${0.07+Math.sin(gt*0.6+2)*0.025})`);
+    al.addColorStop(1,'transparent');
+    ctx.fillStyle=al; ctx.fillRect(0,0,W,H);
+    const ar=ctx.createRadialGradient(W*0.8,H*0.7,0,W*0.8,H*0.7,W*0.45);
+    ar.addColorStop(0,`rgba(180,60,5,${0.06+Math.sin(gt*0.55+3)*0.02})`);
+    ar.addColorStop(1,'transparent');
+    ctx.fillStyle=ar; ctx.fillRect(0,0,W,H);
+
+    // Orbes verdes flotantes
+    orbs.forEach(o=>{
+      o.phase+=o.spd; o.x+=o.vx; o.y+=o.vy;
+      if(o.x<-o.r)o.x=W+o.r; if(o.x>W+o.r)o.x=-o.r;
+      if(o.y<-o.r)o.y=H+o.r; if(o.y>H+o.r)o.y=-o.r;
+      const pulse=0.5+0.5*Math.sin(o.phase);
+      ctx.save(); ctx.globalAlpha=o.bright*pulse;
+      const g=ctx.createRadialGradient(o.x,o.y,0,o.x,o.y,o.r);
+      g.addColorStop(0,`hsla(${o.hue},85%,52%,0.8)`);
+      g.addColorStop(0.5,`hsla(${o.hue},70%,38%,0.25)`);
+      g.addColorStop(1,'transparent');
+      ctx.beginPath(); ctx.arc(o.x,o.y,o.r,0,6.28);
+      ctx.fillStyle=g; ctx.fill(); ctx.restore();
+    });
+
+    // Partículas verde-ámbar dispersas
+    ps.forEach(p=>{
+      p.phase+=p.spd;
+      p.x+=p.vx+Math.sin(p.phase)*0.12; p.y+=p.vy;
+      if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+      if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+      const tw=0.38+0.62*Math.sin(p.phase), a=p.bright*tw;
+      ctx.save(); ctx.globalAlpha=a*0.2;
+      const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*8);
+      g.addColorStop(0,`hsla(${p.hue},100%,62%,0.6)`);
+      g.addColorStop(1,'transparent');
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*8,0,6.28);
+      ctx.fillStyle=g; ctx.fill(); ctx.restore();
+      ctx.globalAlpha=a*0.82;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.28);
+      ctx.fillStyle=`hsla(${p.hue},100%,80%,1)`;
+      ctx.fill(); ctx.globalAlpha=1;
+    });
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+
+// ══════════════════════════════════════════
+// FESTIVOS COLOMBIA
+// ══════════════════════════════════════════
+function easterDate(y) {
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,
+        f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
+        h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,
+        l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+        mo=Math.floor((h+l-7*m+114)/31),day=((h+l-7*m+114)%31)+1;
+  return new Date(y,mo-1,day);
+}
+
+function nextMon(d) {
+  const dt=new Date(d),dow=dt.getDay();
+  if(dow===1)return dt;
+  dt.setDate(dt.getDate()+(dow===0?1:8-dow));
+  return dt;
+}
+
+function addD(d,n){const dt=new Date(d);dt.setDate(dt.getDate()+n);return dt;}
+
+function toStr(d) {
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function colombianHolidays(year) {
+  const h=new Set();
+  const add=d=>h.add(toStr(d));
+  // Fijos
+  add(new Date(year,0,1));  add(new Date(year,4,1));
+  add(new Date(year,6,20)); add(new Date(year,7,7));
+  add(new Date(year,11,8)); add(new Date(year,11,25));
+  // Puentes
+  [new Date(year,0,6),new Date(year,2,19),new Date(year,5,29),
+   new Date(year,7,15),new Date(year,9,12),new Date(year,10,1),
+   new Date(year,10,11)].forEach(d=>add(nextMon(d)));
+  // Semana Santa
+  const easter=easterDate(year);
+  add(addD(easter,-3)); add(addD(easter,-2));
+  // Post-Pascua (puente)
+  add(nextMon(addD(easter,39)));
+  add(nextMon(addD(easter,60)));
+  add(nextMon(addD(easter,68)));
+  return h;
+}
+
+
+// ══════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════
+function getState(){
+  try{ return JSON.parse(localStorage.getItem('release_v3'))||{}; }catch(e){ return{}; }
+}
+function saveState(s){localStorage.setItem('release_v3',JSON.stringify(s));}
+
+const MESES_FULL=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MESES_SHORT=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const DIAS_FULL=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+// Cabecera: L M X J V S D (inicio lunes)
+const CAL_HEADERS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+// Sesiones: Mar=col 1 (jsDow=2), Jue=col 3 (jsDow=4)
+// colIndex = (jsDow + 6) % 7  → Mon=0,Tue=1,Wed=2,Thu=3,Fri=4,Sat=5,Sun=6
+
+function weekMonday(ref){
+  const d=new Date(ref);d.setHours(0,0,0,0);
+  const dow=d.getDay();
+  d.setDate(d.getDate()+(dow===0?-6:1-dow));
+  return d;
+}
+
+
+// ══════════════════════════════════════════
+// RENDER CALENDARIO
+// ══════════════════════════════════════════
+function renderCalendario() {
+  const state=getState();
+  const canceladas=state.canceladas||[];
+  const agotadas=state.agotadas||[];
+  const especiales=state.especiales||[];
+  const cuposOcupados=state.cuposOcupados||{};
+
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const lunes=weekMonday(hoy);
+
+  // Festivos para los años involucrados
+  const years=new Set([lunes.getFullYear(),(new Date(lunes.getTime()+13*86400000)).getFullYear()]);
+  const festivos=new Set();
+  years.forEach(y=>colombianHolidays(y).forEach(f=>festivos.add(f)));
+
+  // Mes label
+  const d1=lunes,d14=new Date(lunes.getTime()+13*86400000);
+  const monthLabel=d1.getMonth()===d14.getMonth()
+    ? `${MESES_FULL[d1.getMonth()]} ${d1.getFullYear()}`
+    : `${MESES_SHORT[d1.getMonth()]} — ${MESES_SHORT[d14.getMonth()]} ${d14.getFullYear()}`;
+  document.getElementById('calMonthLabel').textContent=monthLabel;
+
+  // Header días
+  const headerEl=document.getElementById('calHeader');
+  headerEl.innerHTML=CAL_HEADERS.map((l,i)=>{
+    const isSession=(i===0||i===2); // Lun=0, Mié=2
+    return `<div class="cal-header-cell ${isSession?'session-col':''}">${l}</div>`;
+  }).join('');
+
+  // Días de sesión para una semana dada (lun/mié normal; mar/jue si hay festivo esa semana)
+  function sessionDowsForWeek(weekMon) {
+    const wed=new Date(weekMon); wed.setDate(weekMon.getDate()+2);
+    if(festivos.has(toStr(weekMon))||festivos.has(toStr(wed))) return [2,4]; // Mar, Jue
+    return [1,3]; // Lun, Mié
+  }
+
+  // Render semana
+  function renderWeek(elId, weekOffset) {
+    const el=document.getElementById(elId);
+    el.innerHTML='';
+    const weekMon=new Date(lunes); weekMon.setDate(lunes.getDate()+weekOffset*7);
+    const weekSessionDows=sessionDowsForWeek(weekMon);
+    for(let d=0;d<7;d++){
+      const fecha=new Date(lunes);
+      fecha.setDate(lunes.getDate()+weekOffset*7+d);
+      const jsDow=fecha.getDay(); // 0=Dom
+      const dateStr=toStr(fecha);
+      const isPast=fecha<hoy;
+      const isToday=toStr(fecha)===toStr(hoy);
+      const isWeekend=(jsDow===0||jsDow===6);
+      const isFestivo=festivos.has(dateStr);
+      const isSession=weekSessionDows.includes(jsDow) && !canceladas.includes(dateStr) && !isFestivo;
+      const esAgotada=agotadas.includes(dateStr);
+      const ocupados=cuposOcupados[dateStr]||0;
+      const libres=Math.max(0,CONFIG.cuposPorSesion-ocupados);
+      const esFull=isSession&&!isPast&&(esAgotada||libres===0);
+
+      const cell=document.createElement('div');
+      cell.className='cal-cell';
+      if(isPast) cell.classList.add('past');
+      if(isWeekend&&!isSession) cell.classList.add('weekend');
+      if(isFestivo&&!isSession) cell.classList.add('holiday');
+      if(isSession&&!isPast){
+        if(esFull) cell.classList.add('agotada');
+        else {
+          cell.classList.add('session');
+          const diaFull=DIAS_FULL[jsDow];
+          const fechaFull=`${fecha.getDate()} ${MESES_FULL[fecha.getMonth()]}`;
+          cell.onclick=()=>openBooking(dateStr,diaFull,fechaFull,CONFIG.horaDisplay);
+        }
+      }
+
+      // Número con ring de hoy
+      let numInner=`${fecha.getDate()}`;
+      cell.innerHTML=`
+        ${isToday && !isFestivo?'<div class="today-ring"></div>':''}
+        <div class="cell-num">${numInner}</div>
+        ${isSession&&!isPast ? (
+          esFull
+            ? `<div class="cell-agotada">Agotada</div>`
+            : `<div class="cell-dot"></div><div class="cell-spots">${libres} cupos</div>`
+        ) : isFestivo
+            ? `<div class="cell-festivo">Festivo</div>`
+            : ''}
+      `;
+      el.appendChild(cell);
+    }
+  }
+
+  renderWeek('week1',0);
+  renderWeek('week2',1);
+}
+
+renderCalendario();
+
+
+// ══════════════════════════════════════════
+// BOOKING MODAL
+// ══════════════════════════════════════════
+let curSess=null,curOpt='sola';
+
+function openBooking(dateStr,dia,fecha,hora){
+  curSess={dateStr,dia,fecha,hora};curOpt='sola';
+  document.getElementById('mDayLbl').textContent=dia;
+  document.getElementById('mDateLbl').textContent=fecha;
+  document.getElementById('mTimeLbl').textContent=hora;
+  ['fNombre1','fWA1','fNombre2','fWA2'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fNombre2').style.display='none';
+  document.getElementById('fWA2').style.display='none';
+  document.getElementById('optSola').classList.add('selected');
+  document.getElementById('optDuo').classList.remove('selected');
+  openModal('bookingModal');
+}
+
+function selectOpt(opt){
+  curOpt=opt;
+  document.getElementById('optSola').classList.toggle('selected',opt==='sola');
+  document.getElementById('optDuo').classList.toggle('selected',opt==='companero');
+  const duo=opt==='companero';
+  document.getElementById('fNombre2').style.display=duo?'':'none';
+  document.getElementById('fWA2').style.display=duo?'':'none';
+}
+
+function proceedPay(){
+  const n1=document.getElementById('fNombre1').value.trim();
+  const w1=document.getElementById('fWA1').value.trim();
+  if(!n1||!w1){alert('Por favor completa tu nombre y WhatsApp.');return;}
+  if(curOpt==='companero'){
+    const n2=document.getElementById('fNombre2').value.trim();
+    const w2=document.getElementById('fWA2').value.trim();
+    if(!n2||!w2){alert('Completa los datos de tu acompañante.');return;}
+  }
+  const link=CONFIG.bold[curOpt];
+  if(!link||link.startsWith('BOLD_')){
+    const msg=encodeURIComponent(`Hola! Quiero reservar cupo para el ${curSess.fecha} a las ${curSess.hora}.\nNombre: ${n1}\n${curOpt==='companero'?'Acompañante: '+document.getElementById('fNombre2').value.trim()+'\n':''}Opción: ${curOpt==='sola'?'Individual $45,000':'Duo $80,000'}`);
+    window.open(`https://wa.me/${CONFIG.whatsapp}?text=${msg}`,'_blank');
+  } else { window.open(link,'_blank'); }
+  closeModal('bookingModal');
+}
+
+
+// ══════════════════════════════════════════
+// TIQUETERAS
+// ══════════════════════════════════════════
+function openTiqModal(){openModal('tiqModal');}
+
+function payTiquetera(key){
+  const nm={ind_prueba:'Semana de prueba individual ($65,000)',ind_1:'1 sesión individual ($45,000)',ind_5:'5 sesiones individuales ($195,000)',ind_10:'10 sesiones ($395,000)',ind_15:'15 sesiones ($555,000)',comp_prueba:'Semana de prueba compartida ($120,000)',comp_2:'2 sesiones compartidas ($80,000)',comp_6:'6 sesiones compartidas ($235,000)',comp_8:'8 sesiones compartidas ($310,000)',comp_12:'12 sesiones compartidas ($444,000)'};
+  const link=CONFIG.bold[key];
+  if(!link||link.startsWith('BOLD_')){
+    const msg=encodeURIComponent(`Hola! Quiero comprar: ${nm[key]||key}`);
+    window.open(`https://wa.me/${CONFIG.whatsapp}?text=${msg}`,'_blank');
+  } else { window.open(link,'_blank'); }
+  closeModal('tiqModal');
+}
+
+function switchTab(tab,btn){
+  document.querySelectorAll('.tiq-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tabInd').style.display=tab==='ind'?'':'none';
+  document.getElementById('tabComp').style.display=tab==='comp'?'':'none';
+}
+
+
+// ══════════════════════════════════════════
+// MODAL UTILS
+// ══════════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('active');document.body.style.overflow='hidden';}
+function closeModal(id){document.getElementById(id).classList.remove('active');document.body.style.overflow='';}
+
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)closeModal(o.id);});
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    document.querySelectorAll('.modal-overlay.active').forEach(m=>closeModal(m.id));
+    if(document.getElementById('adminPanel').classList.contains('active'))closeAdmin();
+  }
+});
+
+
+// ══════════════════════════════════════════
+// ADMIN
+// ══════════════════════════════════════════
+let adminSeq='';
+document.addEventListener('keydown',e=>{
+  adminSeq=(adminSeq+e.key).slice(-10);
+  if(adminSeq.toLowerCase().endsWith('admin'))openAdminLogin();
+});
+
+function openAdminLogin(){
+  document.getElementById('adminPanel').classList.add('active');
+  document.getElementById('adminLogin').style.display='';
+  document.getElementById('adminContent').style.display='none';
+  document.getElementById('adminPw').value='';
+  setTimeout(()=>document.getElementById('adminPw').focus(),100);
+}
+
+function checkPw(){
+  if(document.getElementById('adminPw').value===CONFIG.adminPassword){
+    document.getElementById('adminLogin').style.display='none';
+    document.getElementById('adminContent').style.display='block';
+    renderAdmin();
+  } else {
+    document.getElementById('adminPw').value='';
+    document.getElementById('adminPw').placeholder='Contraseña incorrecta';
+    setTimeout(()=>document.getElementById('adminPw').placeholder='Contraseña',2000);
+  }
+}
+
+function closeAdmin(){document.getElementById('adminPanel').classList.remove('active');adminSeq='';}
+
+function renderAdmin(){
+  const state=getState();
+  const canceladas=state.canceladas||[];
+  const agotadas=state.agotadas||[];
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const lunes=weekMonday(hoy);
+
+  const years=new Set([lunes.getFullYear(),(new Date(lunes.getTime()+13*86400000)).getFullYear()]);
+  const festivos=new Set();
+  years.forEach(y=>colombianHolidays(y).forEach(f=>festivos.add(f)));
+
+  const sesiones=[];
+  for(let d=0;d<14;d++){
+    const f=new Date(lunes);f.setDate(lunes.getDate()+d);
+    const jsDow=f.getDay();
+    const ds=toStr(f);
+    if(!CONFIG.diasSesion.includes(jsDow))continue;
+    if(f<hoy)continue;
+    if(festivos.has(ds))continue;
+    sesiones.push({fecha:f,dateStr:ds});
+  }
+
+  const especiales=state.especiales||[];
+  especiales.forEach(e=>{
+    const f=new Date(e.date+'T12:00:00');
+    if(f>=hoy&&!canceladas.includes(e.date))sesiones.push({fecha:f,dateStr:e.date,especial:true});
+  });
+  sesiones.sort((a,b)=>a.fecha-b.fecha);
+
+  const list=document.getElementById('adminList');
+  if(!sesiones.length){list.innerHTML='<p style="font-size:12px;color:var(--ash-2)">No hay sesiones próximas.</p>';return;}
+
+  list.innerHTML=sesiones.filter(s=>!canceladas.includes(s.dateStr)).map(s=>{
+    const nombre=`${DIAS_FULL[s.fecha.getDay()]} ${s.fecha.getDate()} ${MESES_FULL[s.fecha.getMonth()]}`;
+    const esAg=agotadas.includes(s.dateStr);
+    return `<div class="admin-row">
+      <div class="admin-row-name">${nombre}${s.especial?'<span class="tag-badge">especial</span>':''}${esAg?'<span class="tag-badge red">agotada</span>':''}</div>
+      <div class="admin-controls">
+        ${esAg?`<button class="admin-btn ok" onclick="toggleAg('${s.dateStr}')">↺ Abrir</button>`:`<button class="admin-btn" onclick="toggleAg('${s.dateStr}')">Marcar agotada</button>`}
+        <button class="admin-btn danger" onclick="cancelarSesion('${s.dateStr}')">× Cancelar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAg(ds){
+  const state=getState();const ag=state.agotadas||[];
+  const i=ag.indexOf(ds);if(i>=0)ag.splice(i,1);else ag.push(ds);
+  state.agotadas=ag;saveState(state);renderAdmin();renderCalendario();
+}
+
+function cancelarSesion(ds){
+  if(!confirm('¿Cancelar esta sesión?'))return;
+  const state=getState();const ca=state.canceladas||[];
+  if(!ca.includes(ds))ca.push(ds);state.canceladas=ca;saveState(state);renderAdmin();renderCalendario();
+}
+
+function addEspecial(){
+  const fecha=document.getElementById('aNuevaFecha').value;
+  const hora=document.getElementById('aNuevaHora').value||CONFIG.hora24;
+  if(!fecha){alert('Selecciona una fecha.');return;}
+  const state=getState();const esp=state.especiales||[];
+  if(esp.some(e=>e.date===fecha)){alert('Ya hay una sesión especial ese día.');return;}
+  esp.push({date:fecha,hora});state.especiales=esp;saveState(state);
+  document.getElementById('aNuevaFecha').value='';renderAdmin();renderCalendario();
+}
+
+
+// ══════════════════════════════════════════
+// FOOTER
+// ══════════════════════════════════════════
+document.getElementById('linkIG').href=CONFIG.instagram;
+document.getElementById('linkWA').href=`https://wa.me/${CONFIG.whatsapp}`;
+</script>
+
+</body>
+</html>
